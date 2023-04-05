@@ -299,10 +299,12 @@ const store = createStore({
         })
       })
     },
-    deleteFriend({commit}, id) {
+    deleteFriend({commit}, indexFriend) {
       return new Promise((resolve, reject) => {
-        instance.patch("/user/unfriend", {id: id})
+        const friend: any = this.state.userInfos.friends[indexFriend]
+        instance.patch("/user/unfriend", {id: friend.id})
         .then((res: any) => {
+          this.state.userInfos.friends.splice(indexFriend, 1)
           commit('setIsFriend', false)
           resolve(res)
         })

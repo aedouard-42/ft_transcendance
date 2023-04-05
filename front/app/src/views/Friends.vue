@@ -49,8 +49,8 @@
       this.$store.dispatch('stopOnline')
     },
     methods: {
-      async removeFriend(id: any) {
-        await this.$store.dispatch('deleteFriend', id)
+      async removeFriend(index: any) {
+        await this.$store.dispatch('deleteFriend', index)
         //await this.$store.dispatch('getProfileInfos', id);
       },
       statusClass(id: number) {
