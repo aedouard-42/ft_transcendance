@@ -1,0 +1,12 @@
+@font-face {
+    font-family: 'pokemon';
+    src: url('pokemon-webfont.woff2') format('woff2'),
+         url('pokemon-webfont.woff') format('woff');
+    font-weight: normal;
+    font-style: normal;
+}
+
+@font-face {
+    font-family: 'pixel';
+    src: url('PKMN\ RBYGSC.ttf') format('truetype');
+}

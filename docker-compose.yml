@@ -1,0 +1,84 @@
+# **************************************************************************** #
+#                                                                              #
+#                                                         :::      ::::::::    #
+#    docker-compose.yml                                 :+:      :+:    :+:    #
+#                                                     +:+ +:+         +:+      #
+#    By: lothieve <marvin@42.fr>                    +#+  +:+       +#+         #
+#                                                 +#+#+#+#+#+   +#+            #
+#    Created: 2022/11/04 15:02:47 by lothieve          #+#    #+#              #
+#    Updated: 2023/04/01 13:53:46 by lothieve         ###   ########.fr        #
+#                                                                              #
+# **************************************************************************** #
+
+version: '3'
+services:
+  db:
+    container_name: db
+    image: postgres
+    volumes:
+      - db:/var/lib/postgresql/
+    environment:
+      POSTGRES_PASSWORD: ${POSTGRES_PW}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_DB: ${POSTGRES_DB}
+      PGDATA: ${PGDATA}
+    restart: always
+    networks:
+      - transcendence
+  nest:
+    container_name: nest
+    build: nest
+    depends_on:
+      - db
+    restart: on-failure
+    networks:
+      - transcendence
+    ports:
+      - 3000:3000
+    volumes: 
+      - profilepics:/profilepics/
+      - ./nest/backend/:/usr/app/
+    environment:
+      POSTGRES_PW: ${POSTGRES_PW}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_HOST: ${POSTGRES_HOST}
+      POSTGRES_DB: ${POSTGRES_DB}
+      FT_ID: ${FT_ID}
+      FT_SECRET: ${FT_SECRET}
+      URL: ${URL}
+  vue: 
+    container_name: vue
+    build: front
+    image: frotend
+    restart: unless-stopped
+    networks:
+      - transcendence
+    depends_on:
+      - db
+    volumes:
+      - ./front/app:/app
+    environment:
+      VUE_APP_URL: ${URL}
+    ports:
+    - 8080:8080
+#  pgadmin:
+#    container_name: pgadmin
+#    image: dpage/pgadmin4
+#    restart: always
+#    depends_on:
+#      - db
+#    volumes:
+#      - pgadmin:/var/lib/pgadmin
+#    environment:
+#      PGADMIN_DEFAULT_EMAIL: ${PGADMIN_DEFAULT_EMAIL}
+#      PGADMIN_DEFAULT_PASSWORD: ${PGADMIN_DEFAULT_PASSWORD}
+#    ports:
+#      - "5050:80"
+#    networks:
+#      - transcendence
+networks:
+  transcendence:
+volumes:
+  db:
+#  pgadmin:
+  profilepics:

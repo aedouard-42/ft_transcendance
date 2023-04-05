@@ -1,0 +1,53 @@
+{
+  "name": "frontend",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "serve": "vue-cli-service serve",
+    "build": "vue-cli-service build",
+    "prod": "vue-cli-service serve --mode production"
+  },
+  "dependencies": {
+    "@babel/core": "^7.21.4",
+    "@jridgewell/sourcemap-codec": "^1.4.14",
+    "@types/js-cookie": "^3.0.3",
+    "@types/qrcode": "^1.5.0",
+    "2fa-util": "^1.1.1",
+    "axios": "^1.2.4",
+    "buffer": "^6.0.3",
+    "Buffer": "^0.0.0",
+    "canvg": "^4.0.1",
+    "js-cookie": "^3.0.1",
+    "mitt": "3.0.0",
+    "npm": "^9.6.3",
+    "qrcode": "^1.5.1",
+    "save-svg-as-png": "^1.4.17",
+    "serve": "^14.1.2",
+    "socket.io": "^4.6.1",
+    "socket.io-client": "^4.6.1",
+    "vue": "^3.2.13",
+    "vue-advanced-cropper": "^2.8.8",
+    "vue-cropper": "^1.0.7",
+    "vue-router": "^4.0.3",
+    "vue3-cookies": "^1.0.6",
+    "vue3-otp-input": "^0.3.6",
+    "vuetify": "^3.1.0",
+    "vuex": "^4.0.0"
+  },
+  "devDependencies": {
+    "@mdi/font": "^7.1.96",
+    "@types/node": "^18.15.3",
+    "@vue/cli-plugin-router": "~5.0.0",
+    "@vue/cli-plugin-typescript": "^5.0.8",
+    "@vue/cli-plugin-vuex": "~5.0.0",
+    "@vue/cli-service": "~5.0.0",
+    "material-design-icons-iconfont": "^6.7.0",
+    "typescript": "~4.5.5"
+  },
+  "browserslist": [
+    "> 1%",
+    "last 2 versions",
+    "not dead",
+    "not ie 11"
+  ]
+}
