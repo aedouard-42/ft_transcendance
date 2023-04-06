@@ -14,9 +14,10 @@ import { FriendMessage } from 'src/database/entities/FriendMessage';
 import CreateChannelDTO from 'src/channel/dto/create-channel.dto';
 import { ChannelMessage } from 'src/database/entities/ChannelMessage';
 import { JwtService } from '@nestjs/jwt';
-import { HttpStatus, Logger } from '@nestjs/common';
+import { HttpStatus, Logger, UseInterceptors, ClassSerializerInterceptor } from '@nestjs/common';
 import { channel } from 'diagnostics_channel';
 import changePasswordDTO from 'src/dto/change-pw.dto';
+import { serialize } from 'class-transformer';
 
 @WebSocketGateway({ namespace: 'chat' })
 export class MessageGateway implements OnGatewayConnection, OnGatewayDisconnect {
@@ -85,7 +86,7 @@ export class MessageGateway implements OnGatewayConnection, OnGatewayDisconnect 
     async joinChannel(  @MessageBody() dto: JoinChannelDTO,
                         @ConnectedSocket() client: Socket) {
         this.verifyId(client, dto.uid);
-        const chan = await this.channelRepository.findOne({
+        const chan:Channel = await this.channelRepository.findOne({
             relations: {
                 admin: true,
                 users: true,
@@ -100,7 +101,12 @@ export class MessageGateway implements OnGatewayConnection, OnGatewayDisconnect 
         chan.updateBans();
         if (chan.isBanned(dto.uid)) throw new WsException("User is banned from this channel");
         if (chan.isOn(dto.uid)) throw new WsException("User is already on this channel")
-        if (chan.password != null && chan.password.length > 0) throw new WsException("This channel requires a password");
+        // if (chan.password != null && chan.password.length > 0) {
+        //     console.log('This channel requires a password')
+        //     throw new WsException("This channel requires a password");
+        // }
+        if (! await chan.verifyPassword(dto.password))
+            throw new WsException("Bad password")
         client.join(chan.id.toString());
         chan.users.push(user);
         this.channelRepository.save(chan);
@@ -119,33 +125,33 @@ export class MessageGateway implements OnGatewayConnection, OnGatewayDisconnect 
             .getMany();
     }
 
-    @SubscribeMessage('joinwithpw')
-    async joinChannelWithPassword(  @MessageBody() dto: JoinChannelDTO,
-                        @ConnectedSocket() client: Socket) {
-        this.verifyId(client, dto.uid);
-        const chan = await this.channelRepository.findOne({
-            select: {id: true},
-            relations: {
-                users: true,
-                mods: true,
-                bannedOrMuted: true
-            },
-            where: {id: dto.chanId}
-        });
-        if (!chan) throw new WsException("Channel Doesn't exist")
-        chan.updateBans();
-        const user = await this.userRepository.findOneBy({id: dto.uid});
-        if (!user) throw new WsException("User doesn't exist");
-        if(chan.isBanned(dto.uid)) throw new WsException("User is banned from this channel");
-        if (!chan.verifyPassword(dto.password)) throw new WsException("Wrong Password");
-        client.join(chan.id.toString());
-        chan.users.push(user);
-        this.channelRepository.save(chan);
-        this.server.to(chan.id.toString()).emit("joined_channel", {
-            channel: chan,
-            uid: dto.uid
-        });
-    }
+    // @SubscribeMessage('joinwithpw')
+    // async joinChannelWithPassword(  @MessageBody() dto: JoinChannelDTO,
+    //                     @ConnectedSocket() client: Socket) {
+    //     this.verifyId(client, dto.uid);
+    //     const chan = await this.channelRepository.findOne({
+    //         select: {id: true},
+    //         relations: {
+    //             users: true,
+    //             mods: true,
+    //             bannedOrMuted: true
+    //         },
+    //         where: {id: dto.chanId}
+    //     });
+    //     if (!chan) throw new WsException("Channel Doesn't exist")
+    //     chan.updateBans();
+    //     const user = await this.userRepository.findOneBy({id: dto.uid});
+    //     if (!user) throw new WsException("User doesn't exist");
+    //     if(chan.isBanned(dto.uid)) throw new WsException("User is banned from this channel");
+    //     if (!chan.verifyPassword(dto.password)) throw new WsException("Wrong Password");
+    //     client.join(chan.id.toString());
+    //     chan.users.push(user);
+    //     this.channelRepository.save(chan);
+    //     this.server.to(chan.id.toString()).emit("joined_channel", {
+    //         channel: chan,
+    //         uid: dto.uid
+    //     });
+    // }
 
     @SubscribeMessage('ban')
     async banUser(  @MessageBody() dto: BanUserDTO,
@@ -337,15 +343,20 @@ export class MessageGateway implements OnGatewayConnection, OnGatewayDisconnect 
         client.emit('newChannel', (channel));
     }
 
-    @SubscribeMessage("getAll")
-    async getAllChannels(@ConnectedSocket() client: Socket) {
-        let channels = await this.channelRepository.find({
+    @UseInterceptors(ClassSerializerInterceptor)
+    async getAllChannels() : Promise<Channel []> {
+        return await this.channelRepository.find({
             relations: {
                 users: true,
                 mods: true
             }
         });
-        client.emit("sendAllChannels", channels.filter(chan => !chan.isPrivate));
+    }
+
+    @SubscribeMessage("getAll")
+    async sendAllChannel(@ConnectedSocket() client: Socket) {
+        let channels = await this.getAllChannels()
+        client.emit("sendAllChannels", JSON.parse(serialize(channels.filter(chan => !chan.isPrivate))));
     }
 
     @SubscribeMessage('leave')
@@ -592,6 +603,7 @@ export class MessageGateway implements OnGatewayConnection, OnGatewayDisconnect 
             client.disconnect();
             return ;
         }
+        user.channels = JSON.parse(serialize(user.channels))
         client.emit("login", user);
         this.clients.set(user.id, client);
         this.sockets.set(client, user.id);

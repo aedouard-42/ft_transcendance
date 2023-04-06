@@ -1,4 +1,5 @@
 import { AfterLoad, BeforeInsert, Column, Entity, JoinColumn, JoinTable, ManyToMany, ManyToOne, OneToMany, OneToOne, PrimaryGeneratedColumn } from "typeorm";
+import { Exclude } from 'class-transformer';
 import { BanAndMute } from "./BanAndMute";
 import { ChannelMessage } from "./ChannelMessage";
 import { User } from "./User";
@@ -31,17 +32,18 @@ export class Channel {
     @Column({type: "boolean", default: false})
     isPrivate: boolean;
 
+    @Exclude()
     @Column({type: "varchar", nullable: true, default: null})
-    password?: string;
+    password: string;
 
     @OneToMany(() => BanAndMute, ban => ban.channel, {cascade: true})
     @JoinColumn()
     bannedOrMuted: BanAndMute[];
 
-    @AfterLoad()
-    async removepassword() {
-        this.password = undefined;
-    }
+    // @AfterLoad()
+    // async removepassword() {
+    //     this.password = undefined;
+    // }
 
     @BeforeInsert()
     async hashPassword() {
@@ -56,8 +58,11 @@ export class Channel {
         return (this.mods.find(mod => mod.id == id) != null)
     }
 
-    async verifyPassword(password: string) {
-        return bcrypt.compare(password, this.password);
+    async verifyPassword(plainPassword: string) {
+        if (this.password === null)
+            return true
+        // console.log(`plainpass |${plainPassword}|, hash ${this.password}`
+        return await bcrypt.compare(plainPassword, this.password);
     }
 
     public isBanned(userId: number) : boolean {
