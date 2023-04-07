@@ -83,7 +83,8 @@ export class UsersController {
     async login(@Body() username: string,
                     @Response() res: any) {
         const user = await this.userService.getUserByName(username)
-        if (!user) return res.status(HttpStatus.NOT_FOUND).send();
+        if (!user)
+            return res.status(HttpStatus.NOT_FOUND).send();
         return res.status(HttpStatus.OK).send(user)
     }
     
@@ -93,6 +94,10 @@ export class UsersController {
     async changeUsername(   @Body() data: {username: string}, // {user: wour}
                             @Req() req,
                             @Response() res: any) {
+        if (!(await this.userService.verifUsername(data.username))) {
+            res.status(HttpStatus.CONFLICT).send()
+            return
+        }
         res.status(await this.userService.changeUsername({
             id: req.user.sub,
             username: data.username,
