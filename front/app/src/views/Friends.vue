@@ -33,7 +33,8 @@
       return {
         friends: this.$store.state.userInfos.friends,
         maxFriends: 2,
-        avatar: this.$store.state.chat.avatars_list
+        avatar: this.$store.state.chat.avatars_list,
+        status: this.$store.state.status,
       };
     },
     async mounted() {
@@ -54,8 +55,8 @@
         //await this.$store.dispatch('getProfileInfos', id);
       },
       statusClass(id: number) {
-        const res: any = this.getStatus(id)
-        return res ? 'status-offline': 'status-online';
+        // const res: any = this.getStatus(id)
+        return this.status.get(id) ? 'status-online': 'status-offline';
       },
       async getStatus(id: number) {
         await this.$store.dispatch('isOnline', id)

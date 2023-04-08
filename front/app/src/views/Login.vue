@@ -19,7 +19,6 @@
 import router from '@/router'
 import { defineComponent } from 'vue'
 import { mapState } from 'vuex'
-import { socket, chatSocket} from '@/websocket'
 
 export default defineComponent({
     data() {
@@ -34,12 +33,11 @@ export default defineComponent({
         if (this.$route.query.token) {
             localStorage.setItem('token', this.$route.query.token as any)
             localStorage.setItem('id', this.$route.query.id?.toString() as any)
-            socket.connect()
             await this.$store.dispatch('get2fa')
             if (this.$store.state.userInfos.isotp && !this.$store.state.twoFactorAuthenticated)
                 await this.$router.push('2fa')
             else {
-                chatSocket.connect()
+                this.$store.dispatch('initSocket')
                 await this.$router.push('userInfos')
             }
             return

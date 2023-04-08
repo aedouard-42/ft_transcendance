@@ -2,8 +2,7 @@ import IChannel from '@/models/IChannel'
 import { createStore } from 'vuex'
 import { AxiosInstance } from 'axios'
 import axios from 'axios'
-import { chatSocket } from '@/websocket'
-import { statusSocket } from '@/websocket'
+import { chatSocket, socket, userSocket } from '@/websocket'
 import IDmList from '@/models/IDmList'
 import IUser from '@/models/IUser'
 import IDmMessage from '@/models/IDmMessage'
@@ -48,7 +47,7 @@ const store = createStore({
       losses: 0,
       games: []
     },
-    status: new Map<number, boolean>(),
+    status: new Map<number, string>(),
     chat: {
       joined_channels:  [] as IChannel[],
       current_channel:  null as IChannel | IDmList | null,
@@ -419,10 +418,29 @@ const store = createStore({
         })
       })
     },
+    initSocket() {
+      socket.connect()
+      chatSocket.connect()
+      userSocket.connect()
+      userSocket
+        .on('init', (usersOnline) => {
+        this.state.status = new Map(usersOnline)
+      })
+        .on('updateStatus', (user) => {
+        if (user.status === 'offline')
+          this.state.status.delete(user.id)
+        else
+          this.state.status.set(user.id, user.status)
+
+      })
+    },
     logout({commit}) {
       return new Promise((resolve, reject) => {
         instance.post("/auth/logout")
         .then((response: any) => {
+          socket.disconnect()
+          userSocket.disconnect()
+          chatSocket.disconnect()
           commit('logout')
           resolve(response)
         })
