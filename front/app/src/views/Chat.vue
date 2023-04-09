@@ -105,8 +105,13 @@ export default defineComponent({
 		},
 		async selectChannel(channel: IChannel | IDmList) {
 			await this.$store.dispatch('selectChannel', channel)
-			this.$store.state.current_channel = channel;
-			this.current_channel = channel;
+			// this.$store.state.current_channel = channel;
+			// if (this.isChannel(channel))
+			// chatSocket.emit('getmsg', {
+			// 	id: channel.id,
+			// 	page: 0
+			// })
+			// this.current_channel = channel;
 		},
 		getAllChannels()
 		{
@@ -311,11 +316,11 @@ export default defineComponent({
 		chatSocket.on('deleteChannel', (res: IChannel) => {
 			this.rmChannel(res.id);
 		})
-
 		chatSocket.on('error', args => {
 		})
 	},
-	unmounted() {
+	async unmounted() {
+		await this.$store.dispatch('clearJoinnedChannel')
   		this.stopReceivingMessages();
 		chatSocket.off('sendAllChannels');
 		chatSocket.off('joined_channel');
@@ -324,7 +329,8 @@ export default defineComponent({
 		chatSocket.off('deleteChannel')
 		chatSocket.off('mod')
 		chatSocket.off('banned')
-
+		chatSocket.off('message')
+		chatSocket.off('initChannelMessages')
 	},
 })
 

@@ -200,18 +200,19 @@ export class MessageGateway implements OnGatewayConnection, OnGatewayDisconnect 
             select: {
                 id:         true,
                 content:    true,
-                timestamp:  true
+                timestamp:  true,
             },
             relations: {
                 sender:     true,
+                channel:    true,
             },
             where: {channel: {id: dto.id}},
             order: {id: "DESC"},
-            take: 50,
-            skip: 50 * dto.page
+            // take: 50,
+            // skip: 50 * dto.page
         })
-        this.logger.log('message sent');
-        client.emit('displayMessage', messages);
+        // this.logger.log('message sent');
+        client.emit('initChannelMessages', messages);
     }
     
     @SubscribeMessage('unban')
@@ -585,7 +586,7 @@ export class MessageGateway implements OnGatewayConnection, OnGatewayDisconnect 
     }
 
     async handleConnection(client: Socket) {
-        const uid: number = this.jwtService.decode(client.handshake.auth.token).sub;
+        const uid: number = this.jwtService.decode(client.handshake.auth.token)?.sub;
         const user: User = await this.userRepository.findOne({
             select: {
                 id: true,

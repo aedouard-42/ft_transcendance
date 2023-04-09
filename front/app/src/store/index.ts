@@ -86,6 +86,12 @@ const store = createStore({
       state.chat.joined_channels = userInfos.channels
       state.userInfos.isotp = userInfos.isTwoFactorAuthenticationEnabled
       state.twoFactorAuthenticated = userInfos.TwoFactorAuthenticated
+      state.chat.joined_channels.forEach(channel => {
+        chatSocket.emit('getmsg', {
+          id: channel.id,
+          page: 0
+        })
+      });
     },
     setIsFriend(state, infos) {
       state.profileInfos.isFriend = infos
@@ -128,6 +134,10 @@ const store = createStore({
         const channelIndex = state.chat.joined_channels.findIndex(channel => channel.id === id);
         if (channelIndex === -1) {
           state.chat.joined_channels.push(newchan);
+          chatSocket.emit('getmsg', {
+            id: newchan.id,
+            page: 0
+          })
         }
       }
     },
@@ -144,6 +154,21 @@ const store = createStore({
     setTwoFA(state, infos) {
       state.twoFactorAuthenticated = infos
     },
+    clearJoinnedChannel(state) {
+      state.chat.joined_channels = []
+    },
+    initChannelMessages(state, messages: IMessage[]){
+      if (!messages.length)
+        return;
+      const targetChannel = state.chat.joined_channels.find(ch => ch.id === messages[0].channel.id);
+      // Check if the target channel exists
+      if (targetChannel) {
+        // Push the new message to the target channel's messages array
+        if (!targetChannel.messages)
+          targetChannel.messages = [];
+        targetChannel.messages.push(...messages.reverse());
+      }
+    },
     broadcast(state, message: IMessage)
     {
       const targetChannel = state.chat.joined_channels.find(ch => ch.id === message.channel.id);
@@ -154,7 +179,7 @@ const store = createStore({
           targetChannel.messages = [];
         targetChannel.messages.push(message);
       } else {
-        console.error(`Channel not found: ${message.channel}`);
+        // console.error(`Channel not found: ${message.channel}`);
       }
     },
     broadcastDM(state, message: IDmMessage) {
@@ -499,6 +524,9 @@ const store = createStore({
 			{
         commit("broadcast", message);
 			})
+      .on('initChannelMessages', (messages: IMessage []) => {
+        commit("initChannelMessages", messages);
+      })
 		},
     receiveDM({commit})
     {
@@ -519,6 +547,10 @@ const store = createStore({
     updateChannelsStore({commit}, channel)
     {
       commit("addChannel", channel);
+    },
+    clearJoinnedChannel({commit}) {
+      commit('clearJoinnedChannel');
+      this.state.chat.current_channel = null
     },
     isOnline({commit}, id) {
       chatSocket.emit('isOnline', id)
