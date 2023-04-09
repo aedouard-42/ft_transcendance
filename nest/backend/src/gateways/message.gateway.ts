@@ -51,7 +51,8 @@ export class MessageGateway implements OnGatewayConnection, OnGatewayDisconnect 
         });
         if (!chan) throw new WsException("Channel doesn't exist");
         this.verifyId(client, chan.admin.id);
-        chan.password = dto.newPw;
+        chan.password = dto.newPw
+        await chan.hashPassword()
         this.channelRepository.save(chan);
     }
 

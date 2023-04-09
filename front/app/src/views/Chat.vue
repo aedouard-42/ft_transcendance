@@ -48,6 +48,7 @@ enum opts {
 	MUTE,
 	PROMOTE,
 	DEMOTE,
+	CHANGE_PASSWD
 }
 
 export default defineComponent({
@@ -66,10 +67,12 @@ export default defineComponent({
 				{ id: 7, title: 'ban'},
 				{ id: 8, title: 'mute'},
 				{ id: 9, title: 'promote'},
-				{ id: 10, title: 'demote'}
+				{ id: 10, title: 'demote'},
+				{ id: 11, title: 'change password'}
 			],
 			dialog: false,
 			allchans_dialog: false,
+			password_dialog: false,
 			newChannel: {
 				name: '',
 				password: '',
@@ -82,7 +85,8 @@ export default defineComponent({
 			},
 			newMessage: '',
 			chatSocket: chatSocket,
-			avatar: this.$store.state.chat.avatars_list
+			avatar: this.$store.state.chat.avatars_list,
+			password: ""
 		}
 	},
 	methods: {
@@ -226,6 +230,10 @@ export default defineComponent({
 
 					break
 				 }
+				 case opts.CHANGE_PASSWD: {
+					this.password_dialog = true
+					break
+				 }
 			}
 		},
 		updateCurrentChannel(user : any)
@@ -239,19 +247,28 @@ export default defineComponent({
 			return ((item as IChannel).name ? true : false)
 		},
 		filterOptions(options: any[], target: IUser) : any[] {
-			const out: any[] = [options[opts.PROFILE], options[opts.INVITE]];
-			out.push(this.friends.find(f => f.id == target.id) ? options[opts.DEL_FRIEND] : options[opts.ADD_FRIEND]);
-			out.push(this.mapBlockedUser.has(target.id) ? options[opts.UNBLK_USER] : options[opts.BLK_USER]);
+			const out: any[] = [options[opts.PROFILE]];
+			if (target.id !== Number(localStorage.getItem('id'))) {
+				out.push(options[opts.INVITE])
+				if (!this.mapBlockedUser.has(target.id))
+					out.push(this.friends.find(f => f.id == target.id) ? options[opts.DEL_FRIEND] : options[opts.ADD_FRIEND]);
+				out.push(this.mapBlockedUser.has(target.id) ? options[opts.UNBLK_USER] : options[opts.BLK_USER]);
+				if (this.isChannel(this.current_channel)) {
+					out.push(options[opts.SEND_DM]);
+				}
+			}
 			if (this.isChannel(this.current_channel)) {
-				out.push(options[opts.SEND_DM]);
-				if (this.current_channel.mods.findIndex(mod => mod.id = this.user.id) != -1)
+				// out.push(options[opts.SEND_DM]);
+				if (this.current_channel.mods.findIndex(mod => mod.id == Number(localStorage.getItem('id'))) != -1)
 				{
-					out.push([
-						options[opts.BAN],
-						options[opts.MUTE],
-						options[opts.PROMOTE],
-						options[opts.DEMOTE]
-					])
+					if (target.id === Number(localStorage.getItem('id')))
+						out.push(options[opts.CHANGE_PASSWD])
+					// out.push([
+					// 	options[opts.BAN],
+					// 	options[opts.MUTE],
+					// 	options[opts.PROMOTE],
+					// 	options[opts.DEMOTE]
+					// ])
 				}
 			}
 			return out;
@@ -262,6 +279,19 @@ export default defineComponent({
 			if (!channel_leave) return;
 			channel_leave.users = channel.users;
 			channel_leave.mods = channel.mods;
+		},
+		changePassword() {
+			if(this.isChannel(this.current_channel)) {
+				chatSocket.emit('editpw', {
+					id: this.current_channel.id,
+					newPw: this.password
+				})
+			}
+			this.password_dialog = false
+		},
+		resetPassword() {
+			this.password = ""
+			this.changePassword()
 		}
 	},
     computed: {
@@ -469,6 +499,31 @@ export default defineComponent({
 							</p>
 							<img class="alticon" src="@/assets/quest.png" />
 						</v-btn>
+						<v-dialog v-model="password_dialog" max-width="500">
+							<v-card>
+								<v-cars-title class="ChanlistTitle text-center">
+									Change password
+								</v-cars-title>
+								<v-list-item>
+									<v-form @submit.prevent="changePassword">
+										<v-text-field
+											label="new password"
+											type="password"
+											v-model="password">
+										</v-text-field>
+										<v-btn color="primary" type="submit" class="my-2">Submit</v-btn>
+										<v-btn
+											color="error"
+											class="my-2 ml-4"
+											variant="text"
+											@click="resetPassword"
+										>
+										Reset
+										</v-btn>
+									</v-form>
+								</v-list-item>
+							</v-card>
+						</v-dialog>
 						<v-dialog v-model="allchans_dialog" max-width="500">
 						<v-card id="Dialogbox">
 							<v-card-title class="ChanlistTitle text-center">
