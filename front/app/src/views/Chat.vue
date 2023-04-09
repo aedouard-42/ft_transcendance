@@ -241,7 +241,7 @@ export default defineComponent({
 		filterOptions(options: any[], target: IUser) : any[] {
 			const out: any[] = [options[opts.PROFILE], options[opts.INVITE]];
 			out.push(this.friends.find(f => f.id == target.id) ? options[opts.DEL_FRIEND] : options[opts.ADD_FRIEND]);
-			out.push(this.blocked_users.find(b => b.id == target.id) ? options[opts.UNBLK_USER] : options[opts.BLK_USER]);
+			out.push(this.mapBlockedUser.has(target.id) ? options[opts.UNBLK_USER] : options[opts.BLK_USER]);
 			if (this.isChannel(this.current_channel)) {
 				out.push(options[opts.SEND_DM]);
 				if (this.current_channel.mods.findIndex(mod => mod.id = this.user.id) != -1)
@@ -274,6 +274,7 @@ export default defineComponent({
 		dms_list() {return this.$store.state.chat.dms_list},
 		current_channel() : IChannel | IDmList {return this.$store.state.chat.current_channel},
 		blocked_users() : IUser[] {return this.$store.state.chat.blocked_users},
+		mapBlockedUser() : Set<number> {return this.$store.state.blockedUser},
 		available_channels() {return this.$store.state.chat.available_channels},
 		mergedChannels() {return this.$store.state.chat.dms_list.concat(this.$store.state.chat.joined_channels)}
 	},
@@ -408,7 +409,9 @@ export default defineComponent({
 						<ul v-if="current_channel">
 							<div v-for="message in current_channel.messages">
 								<li id="messContent" v-if="message.content != ''">
-									<span id="username">{{message.sender.username }}</span>: {{message.content}}
+									<span id="username">{{message.sender.username }}</span>:
+									<span v-if="mapBlockedUser.has(message.sender.id)" class="font-italic">blocked message</span>
+									<span v-else>{{ message.content }}</span>
 								</li>
 							</div>
 						</ul>

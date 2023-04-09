@@ -82,6 +82,7 @@ export class UserService {
                 games: true,
                 games2: true,
                 friends: true,
+                blocked: true
             },
             where: {id}
         });

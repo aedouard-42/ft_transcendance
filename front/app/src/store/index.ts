@@ -35,8 +35,10 @@ const store = createStore({
       isotp: false,
       qrcode: '',
       friends: [],
+      blocked: [] as IUser [],
       channels: [] as IChannel [],
     },
+    blockedUser: new Set<number>(),
     profileInfos: {
       profilePic: '',
       username: '',
@@ -86,6 +88,9 @@ const store = createStore({
       state.chat.joined_channels = userInfos.channels
       state.userInfos.isotp = userInfos.isTwoFactorAuthenticationEnabled
       state.twoFactorAuthenticated = userInfos.TwoFactorAuthenticated
+      state.userInfos.blocked.forEach(user => {
+        state.blockedUser.add(user.id)
+      })
       state.chat.joined_channels.forEach(channel => {
         chatSocket.emit('getmsg', {
           id: channel.id,
@@ -158,16 +163,9 @@ const store = createStore({
       state.chat.joined_channels = []
     },
     initChannelMessages(state, messages: IMessage[]){
-      if (!messages.length)
-        return;
-      const targetChannel = state.chat.joined_channels.find(ch => ch.id === messages[0].channel.id);
-      // Check if the target channel exists
-      if (targetChannel) {
-        // Push the new message to the target channel's messages array
-        if (!targetChannel.messages)
-          targetChannel.messages = [];
-        targetChannel.messages.push(...messages.reverse());
-      }
+      messages.reverse().forEach((message) => {
+        this.broadcast(state, message)
+      })
     },
     broadcast(state, message: IMessage)
     {
@@ -341,6 +339,7 @@ const store = createStore({
       return new Promise((resolve, reject) => {
         instance.patch("/user/block", {id: id})
         .then((res: any) => {
+          this.state.blockedUser.add(id)
           commit('setIsBlock', true)
           resolve(res)
         })
@@ -354,6 +353,7 @@ const store = createStore({
         instance.patch("/user/unblock", {id: id})
         .then((res: any) => {
           commit('setIsBlock', false)
+          this.state.blockedUser.delete(id)
           resolve(res)
         })
         .catch((err: any) => {
@@ -525,7 +525,9 @@ const store = createStore({
         commit("broadcast", message);
 			})
       .on('initChannelMessages', (messages: IMessage []) => {
-        commit("initChannelMessages", messages);
+        messages.reverse().forEach((message) => {
+          commit("broadcast", message);
+        })
       })
 		},
     receiveDM({commit})
