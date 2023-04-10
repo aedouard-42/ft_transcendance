@@ -4,7 +4,8 @@ import {
 	WebSocketGateway,
 	WebSocketServer,
 	WsResponse,
-	ConnectedSocket
+	ConnectedSocket,
+	WsException
   } from '@nestjs/websockets';
 import { from, Observable } from 'rxjs';
 import { map } from 'rxjs/operators';
@@ -43,6 +44,7 @@ export class GameGateway implements OnGatewayDisconnect, OnGatewayConnection{
 		game: Game
 		match: Match
 	}>();
+	ConnectedUser = new Map<number, WsUser>();
 	private logger = new Logger('GameGateway')
 	
 	constructor(
@@ -58,17 +60,22 @@ export class GameGateway implements OnGatewayDisconnect, OnGatewayConnection{
 
 	async handleConnection(@ConnectedSocket() clientSocket: Socket) {
 
-		const payload = clientSocket.handshake.auth
-		  const user = await this.userService.userExists(this.jwtService.decode(clientSocket.handshake.auth.token).sub);  
-		  if (!user)
-		  	clientSocket.disconnect();
-		else
+		const payload = this.jwtService.decode(clientSocket.handshake.auth.token)
+		const userExist = await this.userService.userExists(payload.sub);  
+		if (!userExist)
+			clientSocket.disconnect();
+		else {
+			const user = await this.userService.findOneById(payload.sub)
 			this.logger.log('New client connected in game gateway');	
+			this.ConnectedUser.set(payload.sub, {socketId: clientSocket.id, user: user})
+		}
 	}
 
 	handleDisconnect(@ConnectedSocket() clientSocket: Socket) {
+		const payload = this.jwtService.decode(clientSocket.handshake.auth.token)
 		this.logger.log('Client disconnected from game gateway');
 		this.leaveMatchmaking(clientSocket);
+		this.ConnectedUser.delete(payload.sub)
 	}
 	
 	/********************************************************************** *
@@ -233,5 +240,28 @@ export class GameGateway implements OnGatewayDisconnect, OnGatewayConnection{
 		this.userService.incrementLosses(match.winner === 'RIGHT' ? game.player2.id : game.player1.id)
 		this.server.to(`game:${game.id}`).emit('endGame', match.winner)
 		this.server.to(`game:${game.id}`).socketsLeave(`game:${game.id}`)
+	}
+
+	/********************************************************************** *
+	 * 						invitation
+	 * 
+	 * *********************************************************************/
+
+	@SubscribeMessage('sendInvitation')
+	handleInvitation(@ConnectedSocket() clientSocket: Socket, @MessageBody() receiverId: number) {
+		const payload = this.jwtService.decode(clientSocket.handshake.auth.token)
+		if (!this.ConnectedUser.has(receiverId))
+			return;
+		this.userService.setInvitationGame(payload.sub, receiverId)
+		const adverserSocket = this.server.sockets.sockets.get(this.ConnectedUser.get(receiverId).socketId)
+		adverserSocket.emit('invitation', this.ConnectedUser.get(payload.sub).user)
+	}
+
+	@SubscribeMessage('acceptInvitation') 
+	acceptInvitation(@ConnectedSocket() clientSocket: Socket, @MessageBody() senderId: number){
+		const payload = this.jwtService.decode(clientSocket.handshake.auth.token)
+		// this.usqerService.deleteGameInvitaiton(senderId, payload.sub)
+		this.initGame(this.ConnectedUser.get(senderId), this.ConnectedUser.get(payload.sub))
+		return ;
 	}
 }

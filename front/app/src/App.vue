@@ -2,10 +2,15 @@
 import Header from './components/header/Header.vue'
 import Footer from './components/Footer.vue'
 import { defineComponent } from 'vue'
+import { socket } from './websocket'
+import router from '@/router'
+import IUser from './models/IUser'
 
 export default defineComponent({
   data() {
     return {
+      invitation_dialog: false,
+      sender: {} as IUser
     }
   },
   components: {
@@ -25,6 +30,10 @@ export default defineComponent({
         img.style.animationTimingFunction = "linear"
         img.style.animationIterationCount = "infinite"
       })
+    },
+    acceptInvitation() {
+      socket.emit('acceptInvitation', this.sender.id)
+      this.invitation_dialog = false
     }
   },
   created() {
@@ -35,6 +44,13 @@ export default defineComponent({
     if (localStorage.getItem('token')){
       this.$store.dispatch('initSocket')
     }
+    socket.on('invitation', (sender: IUser) => {
+      this.invitation_dialog = true
+      this.sender = sender
+    })
+    socket.on('redirectGame', (response: number) => {
+      router.push({name: 'game', params: {id: response}})
+    })
   }
 })
 </script>
@@ -60,6 +76,31 @@ export default defineComponent({
 			<component :is="Component" />
 			</transition>
 		</router-view>
+    <v-dialog v-model="invitation_dialog" max-width="500">
+      <v-card>
+        <v-cars-title class="ChanlistTitle text-center">
+          {{ sender.username }} challange you !
+        </v-cars-title>
+        <v-list-item>
+            <v-btn 
+              color="primary"
+              type="submit"
+              class="my-2"
+              @click="acceptInvitation"
+            >
+              Accept
+            </v-btn>
+            <v-btn
+              color="error"
+              class="my-2 ml-4"
+              variant="text"
+              @click="invitation_dialog = false"
+            >
+            Decline
+            </v-btn>
+        </v-list-item>
+      </v-card>
+    </v-dialog>
 		</v-main>
 	</v-app>
 	</v-container>

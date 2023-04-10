@@ -18,9 +18,7 @@ export default defineComponent({
     }
   },
   mounted() {
-    this.gameSocket.on('redirectGame', (response: number) => {
-      router.push({name: 'game', params: {id: response}})
-    })
+    
   },
   unmounted() {
     if (this.isMatchmaking)

@@ -3,7 +3,7 @@
 import IChannel from "@/models/IChannel";
 import { defineComponent } from 'vue';
 import { mapActions} from "vuex";
-import { chatSocket } from "@/websocket";
+import { socket, chatSocket } from "@/websocket";
 import IDmList from "@/models/IDmList";
 import IUser from "@/models/IUser";
 import IDmMessage from "@/models/IDmMessage";
@@ -227,7 +227,7 @@ export default defineComponent({
 					break
 				 }
 				 case opts.INVITE: {
-
+					socket.emit('sendInvitation', user.id)
 					break
 				 }
 				 case opts.CHANGE_PASSWD: {

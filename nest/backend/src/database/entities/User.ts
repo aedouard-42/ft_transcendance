@@ -74,6 +74,18 @@ export class User {
   @OneToMany(() => Game, (game) => game.player2, {cascade: true})
   games2: Game[];
 
+  @ManyToMany(() => User, (user) => user.id, {cascade: true})
+  @JoinTable({
+    name: 'game_invitation',
+    joinColumn: {
+      name: 'sender'
+    },
+    inverseJoinColumn: {
+      name: 'receiver'
+    }
+  })
+  gameInvitation: User[]
+
   @AfterLoad()
   removeToken() {
     this.token = undefined;
