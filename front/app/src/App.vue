@@ -34,6 +34,10 @@ export default defineComponent({
     acceptInvitation() {
       socket.emit('acceptInvitation', this.sender.id)
       this.invitation_dialog = false
+    },
+    declineInvitation() {
+      socket.emit('declineInvitation', this.sender.id)
+      this.invitation_dialog = false
     }
   },
   created() {
@@ -78,9 +82,9 @@ export default defineComponent({
 		</router-view>
     <v-dialog v-model="invitation_dialog" max-width="500">
       <v-card>
-        <v-cars-title class="ChanlistTitle text-center">
+        <v-card-title class="ChanlistTitle text-center">
           {{ sender.username }} challange you !
-        </v-cars-title>
+        </v-card-title>
         <v-list-item>
             <v-btn 
               color="primary"
@@ -94,7 +98,7 @@ export default defineComponent({
               color="error"
               class="my-2 ml-4"
               variant="text"
-              @click="invitation_dialog = false"
+              @click="declineInvitation"
             >
             Decline
             </v-btn>

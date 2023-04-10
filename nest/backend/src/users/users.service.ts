@@ -368,38 +368,35 @@ export class UserService {
         return game
     }
 
-    async getGameInvitation(senderId: number, receiverId: number) {
-        let receiver = new User()
-        receiver.id = receiverId
-        return this.userRepository.findOne({
-            select: {
-                gameInvitation: true
-            },
+    async hasGameInvitation(senderId: number, receiverId: number) {
+        const sender = await this.userRepository.findOne({
             relations: {
                 gameInvitation: true
             },
             where: [
                 {id: senderId},
-                {gameInvitation: Equal(receiver)}
             ]
         })
+        console.log(`sender ${sender}`)
+        console.log(`find ${sender.gameInvitation.findIndex(user => user.id == receiverId) !== -1}`)
+        return (sender.gameInvitation.findIndex(user => user.id == receiverId) !== -1)
     }
 
-    async getPendingGameInvitation(receiverId: number) {
-        let receiver = new User()
-        receiver.id = receiverId
-        return this.userRepository.find({
-            select: {
-                gameInvitation: true
-            },
-            relations: {
-                gameInvitation: true
-            },
-            where: [
-                {gameInvitation: Equal(receiver)}
-            ]
-        })
-    }
+    // async getPendingGameInvitation(receiverId: number) {
+    //     let receiver = new User()
+    //     receiver.id = receiverId
+    //     return this.userRepository.find({
+    //         select: {
+    //             gameInvitation: true
+    //         },
+    //         relations: {
+    //             gameInvitation: true
+    //         },
+    //         where: [
+    //             {gameInvitation: Equal(receiver)}
+    //         ]
+    //     })
+    // }
 
     async setInvitationGame(senderId: number, receiverId: number) {
         let receiver = new User()
@@ -417,14 +414,12 @@ export class UserService {
     }
 
     async deleteGameInvitaiton(senderId: number, receiverId: number) {
-        const receiver = this.findOneById(receiverId)
         const sender = await this.userRepository.findOne({
             relations: {
                 gameInvitation: true
             },
             where: [
                 {id: senderId},
-                {gameInvitation: Equal(receiver)}
             ]
         })
         sender.gameInvitation = sender.gameInvitation.filter((user) => {

@@ -248,20 +248,36 @@ export class GameGateway implements OnGatewayDisconnect, OnGatewayConnection{
 	 * *********************************************************************/
 
 	@SubscribeMessage('sendInvitation')
-	handleInvitation(@ConnectedSocket() clientSocket: Socket, @MessageBody() receiverId: number) {
+	async handleInvitation(@ConnectedSocket() clientSocket: Socket, @MessageBody() receiverId: number) {
 		const payload = this.jwtService.decode(clientSocket.handshake.auth.token)
+		const senderId = payload.sub
 		if (!this.ConnectedUser.has(receiverId))
 			return;
-		this.userService.setInvitationGame(payload.sub, receiverId)
+		// if (await this.userService.hasGameInvitation(senderId, receiverId))
+		// 	return;
+		this.userService.setInvitationGame(senderId, receiverId)
 		const adverserSocket = this.server.sockets.sockets.get(this.ConnectedUser.get(receiverId).socketId)
-		adverserSocket.emit('invitation', this.ConnectedUser.get(payload.sub).user)
+		adverserSocket.emit('invitation', this.ConnectedUser.get(senderId).user)
 	}
 
 	@SubscribeMessage('acceptInvitation') 
-	acceptInvitation(@ConnectedSocket() clientSocket: Socket, @MessageBody() senderId: number){
+	async acceptInvitation(@ConnectedSocket() clientSocket: Socket, @MessageBody() senderId: number){
 		const payload = this.jwtService.decode(clientSocket.handshake.auth.token)
-		// this.usqerService.deleteGameInvitaiton(senderId, payload.sub)
+		if (!this.ConnectedUser.has(senderId))
+			return;
+		if (! await this.userService.hasGameInvitation(senderId, payload.sub))
+			return;
+		this.userService.deleteGameInvitaiton(senderId, payload.sub)
 		this.initGame(this.ConnectedUser.get(senderId), this.ConnectedUser.get(payload.sub))
+		return ;
+	}
+
+	@SubscribeMessage('declineInvitation') 
+	async declineInvitation(@ConnectedSocket() clientSocket: Socket, @MessageBody() senderId: number){
+		const payload = this.jwtService.decode(clientSocket.handshake.auth.token)
+		if (! await this.userService.hasGameInvitation(senderId, payload.sub))
+			return;
+		this.userService.deleteGameInvitaiton(senderId, payload.sub)
 		return ;
 	}
 }
