@@ -240,6 +240,7 @@ export class GameGateway implements OnGatewayDisconnect, OnGatewayConnection{
 		this.userService.incrementLosses(match.winner === 'RIGHT' ? game.player2.id : game.player1.id)
 		this.server.to(`game:${game.id}`).emit('endGame', match.winner)
 		this.server.to(`game:${game.id}`).socketsLeave(`game:${game.id}`)
+		this.matchsList.delete(game.id)
 	}
 
 	/********************************************************************** *

@@ -249,10 +249,22 @@ const store = createStore({
     },
     getProfileInfos({commit}, id) {
       return new Promise((resolve, reject) => {
-        instance.post("/user/id/", {id: id})
+        instance.post("/user/id/", {id: id}) 
         .then((response: any) => {
           commit('profileInfos', response.data)
           commit('setStats', response.data)
+          resolve(response)
+        })
+        .catch((error: any) => {
+          resolve(error)
+        })
+      })
+    },
+    getHistoryGame({commit}) {
+      return new Promise((resolve, reject) => {
+        instance.get('/user/gamehistory')
+        .then((response) => {
+          this.state.profileInfos.games = response.data
           resolve(response)
         })
         .catch((error: any) => {

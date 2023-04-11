@@ -358,14 +358,17 @@ export class UserService {
         this.userRepository.increment({id: userId}, 'losses', 1)
     }
 
-    async getUserGameHistory(user: User){
-        let game: Game[] = await this.gameRepository.find({
-            where: [
-                { player1: Equal(user)},
-                { player2: Equal(user) },
-            ]
+    async getUserGameHistory(id: number){
+        let games: Game[] = await this.gameRepository.find({
+            relations: {
+                player1: true,
+                player2: true
+            }, 
         })
-        return game
+        games = games.filter(game => {
+            return game.player1.id == id || game.player2.id == id
+        })
+        return games
     }
 
     async hasGameInvitation(senderId: number, receiverId: number) {
@@ -377,8 +380,6 @@ export class UserService {
                 {id: senderId},
             ]
         })
-        console.log(`sender ${sender}`)
-        console.log(`find ${sender.gameInvitation.findIndex(user => user.id == receiverId) !== -1}`)
         return (sender.gameInvitation.findIndex(user => user.id == receiverId) !== -1)
     }
 

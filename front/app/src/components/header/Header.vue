@@ -43,7 +43,7 @@
       const profilePicURL = ref(store.state.userInfos.profilePic)
 
       const updateProfilePicURL = async () => {
-        if (!localStorage.getItem('token'))
+        if (!localStorage.getItem('token') || !store.state.userInfos.username)
           return ;
         await store.dispatch('getProfilePic', store.state.userInfos.username)
         profilePicURL.value = store.state.userInfos.profilePic + '?t=' + new Date().getTime()

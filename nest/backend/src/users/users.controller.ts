@@ -7,6 +7,7 @@ import * as fs from 'fs';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { JwtAuthGuard } from 'src/auth/guards/jwt-auth.guard';
 import FindUserDTO from './dto/find-user.dto';
+import { Game } from 'src/database/entities/Game';
 
 @Controller('user')
 export class UsersController {
@@ -28,6 +29,13 @@ export class UsersController {
         if (!user)
             return res.status(HttpStatus.NOT_FOUND).send();
         return res.status(HttpStatus.OK).send(user);
+    }
+
+    @UseGuards(JwtAuthGuard)
+    @Get("/gamehistory")
+    async getGameHistory(@Req() req, @Response() res): Promise<Game[]>{
+        let game: Game[] = await this.userService.getUserGameHistory(req.user.sub)
+        return res.send(game)
     }
 
     @UseGuards(JwtAuthGuard)

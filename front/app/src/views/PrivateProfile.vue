@@ -24,7 +24,8 @@
       return { router };
     },
     async mounted() {
-      await this.$store.dispatch("getStats");
+      await this.$store.dispatch("getStats", localStorage.getItem('id'));
+	  await this.$store.dispatch("getHistoryGame")
       this.user.gameStats.played =
         this.$store.state.profileInfos.wins +
         this.$store.state.profileInfos.losses;
@@ -77,8 +78,8 @@
                 <div id="itsaMatch" v-for="(game, index) in user.gameHistory" :key="game.id">
                   <p>Date : {{ game.timestamp }}</p>
                   <p>Score : {{ game.player1Score }} : {{ game.player2Score }}</p>
-                  <p>Winner : {{ game.winner }}</p>
-                  <p>Looser : {{ game.looser }}</p>
+                  <!-- <p>Winner : {{ game.winner }}</p>
+                  <p>Looser : {{ game.looser }}</p> -->
                   <p>Game ID : {{ game.id }}</p>
 				</div>
 			</v-card>
