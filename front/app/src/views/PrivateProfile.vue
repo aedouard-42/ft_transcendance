@@ -25,7 +25,7 @@
     },
     async mounted() {
       await this.$store.dispatch("getStats", localStorage.getItem('id'));
-	  await this.$store.dispatch("getHistoryGame")
+	  await this.$store.dispatch("getHistoryGame", localStorage.getItem('id'))
       this.user.gameStats.played =
         this.$store.state.profileInfos.wins +
         this.$store.state.profileInfos.losses;

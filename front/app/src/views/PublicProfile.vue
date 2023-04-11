@@ -53,6 +53,7 @@
     },
     async mounted() {
         await this.$store.dispatch('getProfileInfos', this.$route.params.id)
+		await this.$store.dispatch('getHistoryGame', this.$route.params.id)
         await this.$store.dispatch('getPic', this.user.username)
         this.user.profilePic = this.user.profilePic
     },
@@ -118,8 +119,8 @@
                 <div id="itsaMatch" v-for="(game, index) in user.games" :key="game.id">
                   <p>Date : {{ game.timestamp }}</p>
                   <p>Score : {{ game.player1Score }} : {{ game.player2Score }}</p>
-                  <p>Winner : {{ game.winner }}</p>
-                  <p>Looser : {{ game.looser }}</p>
+                  <!-- <p>Winner : {{ game.winner }}</p>
+                  <p>Looser : {{ game.looser }}</p> -->
                   <p>Game ID : {{ game.id }}</p>
 				</div>
 			</v-card>
